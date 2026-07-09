@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Euler · Cuatro láminas de un mismo plano</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a141f;
+    --bg-panel: #0e1d2c;
+    --bg-panel-2: #0b1826;
+    --grid: rgba(148,183,214,0.07);
+    --grid-strong: rgba(148,183,214,0.16);
+    --ink: #dfe9f3;
+    --ink-dim: #86a0b8;
+    --ink-faint: #52657a;
+    --line: #1e3245;
+    --paper-line: #3c5a75;
+
+    --c-notacion: #f2b84b;
+    --c-notacion-dim: #6b5427;
+    --c-identidad: #5ecbdb;
+    --c-identidad-dim: #295159;
+    --c-poliedros: #ef7860;
+    --c-poliedros-dim: #6b3629;
+    --c-grafos: #8fd17a;
+    --c-grafos-dim: #3d5a35;
+
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+    --display: 'Space Grotesk', sans-serif;
+  }
+
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0;
+    background:
+      repeating-linear-gradient(0deg, var(--grid) 0px, var(--grid) 1px, transparent 1px, transparent 32px),
+      repeating-linear-gradient(90deg, var(--grid) 0px, var(--grid) 1px, transparent 1px, transparent 32px),
+      var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    line-height:1.55;
+  }
+
+  ::selection{ background:var(--c-identidad); color:#08131c; }
+
+  h1,h2,h3{ font-family:var(--display); margin:0; letter-spacing:-0.01em; }
+  p{ margin:0 0 1em 0; color:var(--ink); }
+  small{ color:var(--ink-dim); }
+
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--ink-dim);
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .eyebrow::before{
+    content:"";
+    width:22px; height:1px;
+    background:currentColor;
+    display:inline-block;
+  }
+
+  /* ---------- NAV ---------- */
+  nav.sheetnav{
+    position:fixed;
+    left:0; top:0;
+    height:100vh;
+    width:76px;
+    border-right:1px solid var(--line);
+    background:linear-gradient(180deg, rgba(255,255,255,0.015), transparent 40%);
+    z-index:50;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:22px 0;
+    gap:6px;
+  }
+  .navlogo{
+    font-family:var(--mono);
+    font-size:10px;
+    color:var(--ink-faint);
+    writing-mode:vertical-rl;
+    text-orientation:mixed;
+    letter-spacing:0.18em;
+    margin-bottom:auto;
+    padding-bottom:20px;
+  }
+  .navitem{
+    width:44px; height:44px;
+    border:1px solid var(--line);
+    border-radius:3px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--ink-dim);
+    background:var(--bg-panel-2);
+    cursor:pointer;
+    text-decoration:none;
+    transition:all .2s ease;
+    position:relative;
+  }
+  .navitem:hover{ border-color:var(--paper-line); color:var(--ink); }
+  .navitem.active{ color:#081018; font-weight:600; }
+  .navitem[data-t="1"].active{ background:var(--c-notacion); border-color:var(--c-notacion); }
+  .navitem[data-t="2"].active{ background:var(--c-identidad); border-color:var(--c-identidad); }
+  .navitem[data-t="3"].active{ background:var(--c-poliedros); border-color:var(--c-poliedros); }
+  .navitem[data-t="4"].active{ background:var(--c-grafos); border-color:var(--c-grafos); }
+
+  main{ margin-left:76px; }
+
+  @media (max-width:760px){
+    nav.sheetnav{
+      width:100%; height:56px; flex-direction:row; top:auto; bottom:0;
+      border-right:none; border-top:1px solid var(--line);
+      padding:6px 10px; gap:8px; justify-content:center;
+    }
+    .navlogo{ display:none; }
+    main{ margin-left:0; padding-bottom:56px; }
+  }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    min-height:92vh;
+    display:flex; flex-direction:column; justify-content:center;
+    padding:60px 8vw;
+    border-bottom:1px dashed var(--line);
+    position:relative;
+    overflow:hidden;
+  }
+  .hero h1{
+    font-size:clamp(34px, 6vw, 68px);
+    font-weight:600;
+    max-width:16ch;
+    margin:18px 0 20px 0;
+  }
+  .hero .years{ color:var(--ink-faint); font-family:var(--mono); font-weight:400; }
+  .hero p.lead{
+    max-width:56ch;
+    font-size:17px;
+    color:var(--ink-dim);
+  }
+  .heroGraph{ margin-top:44px; }
+
+  /* ---------- SHEET (section) ---------- */
+  .sheet{
+    padding:90px 8vw 110px 8vw;
+    border-bottom:1px dashed var(--line);
+    position:relative;
+  }
+  .sheet-head{
+    display:flex; align-items:baseline; gap:18px; flex-wrap:wrap;
+    margin-bottom:8px;
+  }
+  .sheet-num{
+    font-family:var(--mono); font-size:13px; letter-spacing:0.14em;
+    padding:4px 10px; border:1px solid var(--line); border-radius:3px;
+    color:var(--ink-dim);
+  }
+  .sheet h2{ font-size:clamp(26px,3.4vw,40px); font-weight:600; }
+  .sheet .dek{
+    max-width:70ch;
+    color:var(--ink-dim);
+    font-size:16px;
+    margin:14px 0 42px 0;
+  }
+  .accentbar{
+    width:56px; height:3px; margin:14px 0 34px 0; border-radius:2px;
+  }
+  #s1 .accentbar{ background:var(--c-notacion); }
+  #s2 .accentbar{ background:var(--c-identidad); }
+  #s3 .accentbar{ background:var(--c-poliedros); }
+  #s4 .accentbar{ background:var(--c-grafos); }
+
+  .grid2{
+    display:grid; grid-template-columns:1.05fr 1fr; gap:48px;
+  }
+  @media (max-width:900px){ .grid2{ grid-template-columns:1fr; } }
+
+  .panel{
+    background:var(--bg-panel);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:26px;
+  }
+
+  /* ---------- SECTION 1 — notación ---------- */
+  .chipRow{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:22px; }
+  .chip{
+    font-family:var(--mono); font-size:20px;
+    width:64px; height:64px;
+    display:flex; align-items:center; justify-content:center;
+    border:1px solid var(--line);
+    border-radius:6px;
+    background:var(--bg-panel-2);
+    color:var(--ink);
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .chip:hover{ border-color:var(--c-notacion); transform:translateY(-2px); }
+  .chip.active{ background:var(--c-notacion); color:#241a05; border-color:var(--c-notacion); font-weight:600; }
+
+  .symcard h3{ font-size:22px; margin-bottom:6px; color:var(--c-notacion); font-family:var(--mono); }
+  .symcard .name{ font-family:var(--sans); color:var(--ink); font-size:17px; font-weight:600; margin-bottom:14px; display:block;}
+  .beforeafter{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:16px; }
+  .ba-box{ border-left:2px solid var(--line); padding-left:12px; font-size:14px; color:var(--ink-dim); }
+  .ba-box.after{ border-left-color:var(--c-notacion); color:var(--ink); }
+  .ba-label{ font-family:var(--mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-faint); display:block; margin-bottom:4px; }
+
+  /* ---------- SECTION 2 — identidad ---------- */
+  .circleWrap{ display:flex; flex-direction:column; align-items:center; }
+  .thetaLabel{ font-family:var(--mono); color:var(--c-identidad); font-size:14px; margin-top:10px; }
+  input[type=range]{
+    width:100%; accent-color:var(--c-identidad); margin:18px 0 6px 0;
+  }
+  .formulaBox{
+    font-family:var(--mono);
+    font-size:clamp(20px, 3vw, 30px);
+    text-align:center;
+    padding:22px 10px;
+    letter-spacing:0.01em;
+  }
+  .formulaBox span{ transition:color .2s ease, text-shadow .2s ease; padding:0 1px; }
+  .formulaBox span.hi{ text-shadow:0 0 14px currentColor; }
+  .pillars{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:24px; }
+  .pillar{
+    border:1px solid var(--line); border-radius:6px; padding:12px 10px;
+    text-align:center; cursor:pointer; background:var(--bg-panel-2);
+    font-size:13px; transition:all .15s ease;
+  }
+  .pillar b{ display:block; font-family:var(--mono); font-size:12px; letter-spacing:.05em; margin-bottom:4px;}
+  .pillar.active{ border-color:var(--c-identidad); background:rgba(94,203,219,0.1); }
+  @media(max-width:600px){ .pillars{ grid-template-columns:repeat(2,1fr);} }
+  .idNote{ min-height:56px; font-size:14px; color:var(--ink-dim); margin-top:14px; }
+  .celebrate{
+    text-align:center; font-family:var(--mono); font-size:13px; color:var(--c-identidad);
+    opacity:0; transition:opacity .3s ease; margin-top:10px;
+  }
+  .celebrate.show{ opacity:1; }
+
+  /* ---------- SECTION 3 — poliedros ---------- */
+  .solidRow{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:22px; }
+  .solidBtn{
+    font-family:var(--mono); font-size:13px;
+    padding:9px 14px; border:1px solid var(--line); border-radius:20px;
+    background:var(--bg-panel-2); color:var(--ink-dim); cursor:pointer;
+  }
+  .solidBtn.active{ background:var(--c-poliedros); color:#2c1207; border-color:var(--c-poliedros); font-weight:600; }
+  .countRow{ display:flex; gap:14px; margin:20px 0; flex-wrap:wrap; }
+  .countCard{
+    flex:1; min-width:90px; text-align:center; border:1px solid var(--line);
+    border-radius:6px; padding:14px 8px; background:var(--bg-panel-2);
+  }
+  .countCard .num{ font-family:var(--mono); font-size:30px; font-weight:600; }
+  .countCard .lab{ font-family:var(--mono); font-size:11px; color:var(--ink-dim); letter-spacing:.08em; }
+  .eulerCheck{
+    font-family:var(--mono); text-align:center; font-size:18px; padding:14px;
+    border:1px dashed var(--line); border-radius:6px; margin-top:6px;
+  }
+  .eulerCheck.ok{ border-color:var(--c-poliedros); color:var(--c-poliedros); }
+  .genusToggle{
+    margin-top:22px; font-size:13px; color:var(--ink-dim); cursor:pointer;
+    display:flex; align-items:center; gap:8px; user-select:none;
+  }
+  .genusToggle input{ accent-color: var(--c-poliedros); }
+
+  /* ---------- SECTION 4 — grafos ---------- */
+  .bridgeStats{ display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
+  .degChip{
+    font-family:var(--mono); font-size:13px; border:1px solid var(--line);
+    border-radius:6px; padding:8px 12px; background:var(--bg-panel-2);
+  }
+  .degChip b{ color:var(--c-grafos); }
+  .degChip.odd b{ color:#ef7860; }
+  .kResetBtn{
+    font-family:var(--mono); font-size:12px; margin-top:16px;
+    background:none; border:1px solid var(--line); color:var(--ink-dim);
+    padding:8px 14px; border-radius:5px; cursor:pointer;
+  }
+  .kResetBtn:hover{ border-color:var(--c-grafos); color:var(--ink); }
+  .kMsg{ min-height:50px; font-size:14px; margin-top:14px; color:var(--ink-dim); }
+  .kMsg.stuck{ color:var(--c-poliedros); }
+
+  svg text{ font-family:var(--mono); }
+
+  footer{
+    padding:40px 8vw 60px 8vw;
+    font-family:var(--mono); font-size:12px; color:var(--ink-faint);
+  }
+</style>
+</head>
+<body>
+
+<nav class="sheetnav">
+  <div class="navlogo">L. EULER · 1707–1783</div>
+  <a class="navitem" data-t="1" href="#s1">01</a>
+  <a class="navitem" data-t="2" href="#s2">02</a>
+  <a class="navitem" data-t="3" href="#s3">03</a>
+  <a class="navitem" data-t="4" href="#s4">04</a>
+</nav>
+
+<main>
+
+  <!-- HERO -->
+  <section class="hero">
+    <span class="eyebrow">Cuatro láminas de un mismo plano</span>
+    <h1>Leonhard Euler <span class="years">(1707–1783)</span></h1>
+    <p class="lead">Fue, probablemente, el matemático más prolífico de la historia: escribió tanto que la Academia de
+    San Petersburgo siguió publicando trabajos suyos casi cincuenta años después de su muerte. Lo que sigue no son
+    cuatro curiosidades sueltas, sino cuatro maneras en que una misma forma de pensar —ordenar, conectar, generalizar—
+    cambió para siempre el lenguaje y el mapa de la matemática. Recorré cada lámina y probá las herramientas
+    interactivas.</p>
+
+    <svg class="heroGraph" width="100%" height="180" viewBox="0 0 900 180" preserveAspectRatio="xMinYMid meet">
+      <line x1="450" y1="90" x2="120" y2="30" stroke="#f2b84b" stroke-width="1.3" stroke-dasharray="4 4" opacity="0.7"/>
+      <line x1="450" y1="90" x2="330" y2="150" stroke="#5ecbdb" stroke-width="1.3" stroke-dasharray="4 4" opacity="0.7"/>
+      <line x1="450" y1="90" x2="580" y2="150" stroke="#ef7860" stroke-width="1.3" stroke-dasharray="4 4" opacity="0.7"/>
+      <line x1="450" y1="90" x2="790" y2="30" stroke="#8fd17a" stroke-width="1.3" stroke-dasharray="4 4" opacity="0.7"/>
+      <circle cx="450" cy="90" r="30" fill="#0e1d2c" stroke="#3c5a75"/>
+      <text x="450" y="94" text-anchor="middle" font-size="11" fill="#dfe9f3">EULER</text>
+
+      <circle cx="120" cy="30" r="22" fill="#0e1d2c" stroke="#f2b84b"/>
+      <text x="120" y="34" text-anchor="middle" font-size="13" fill="#f2b84b">e, i, π</text>
+
+      <circle cx="330" cy="150" r="22" fill="#0e1d2c" stroke="#5ecbdb"/>
+      <text x="330" y="154" text-anchor="middle" font-size="12" fill="#5ecbdb">eiπ+1=0</text>
+
+      <circle cx="580" cy="150" r="22" fill="#0e1d2c" stroke="#ef7860"/>
+      <text x="580" y="154" text-anchor="middle" font-size="11" fill="#ef7860">V-E+F=2</text>
+
+      <circle cx="790" cy="30" r="22" fill="#0e1d2c" stroke="#8fd17a"/>
+      <text x="790" y="34" text-anchor="middle" font-size="10" fill="#8fd17a">grafos</text>
+    </svg>
+  </section>
+
+  <!-- ================= SECCIÓN 1 — NOTACIÓN ================= -->
+  <section class="sheet" id="s1">
+    <div class="sheet-head">
+      <span class="sheet-num">LÁMINA 01</span>
+      <h2>El idioma que todavía usamos</h2>
+    </div>
+    <div class="accentbar"></div>
+    <p class="dek">Antes de Euler, cada autor escribía la matemática a su manera: sin símbolos fijos para una función,
+    sin nombre para √-1, sin una letra estable para la razón entre la circunferencia y el diámetro. Euler no inventó
+    todos estos signos de la nada, pero fue quien los usó con tanta constancia en sus libros —leídos en toda Europa—
+    que terminaron siendo el estándar que hoy aprendés en la escuela. Tocá cada símbolo para ver su historia.</p>
+
+    <div class="grid2">
+      <div>
+        <div class="chipRow" id="chipRow"></div>
+        <p style="font-size:13px;color:var(--ink-faint);max-width:44ch;">Elegí un símbolo del renglón de arriba para
+        ver, a la derecha, qué significa y cómo era antes de Euler.</p>
+      </div>
+      <div class="panel symcard" id="symcard"></div>
+    </div>
+  </section>
+
+  <!-- ================= SECCIÓN 2 — IDENTIDAD ================= -->
+  <section class="sheet" id="s2">
+    <div class="sheet-head">
+      <span class="sheet-num">LÁMINA 02</span>
+      <h2>La fórmula más hermosa</h2>
+    </div>
+    <div class="accentbar"></div>
+    <p class="dek">Movés un punto sobre una circunferencia (geometría). Ese movimiento se describe con un número
+    imaginario <span style="font-family:var(--mono)">i</span> (álgebra) elevado como potencia de <span
+    style="font-family:var(--mono)">e</span>, la base del crecimiento continuo (análisis). Cuando ese punto recorre
+    exactamente media vuelta, el resultado se escribe únicamente con el neutro de la suma (0) y el neutro del
+    producto (1). Mové el control y observá cómo, en un instante preciso, cuatro ramas separadas de la matemática se
+    convierten en una sola ecuación.</p>
+
+    <div class="grid2">
+      <div class="panel circleWrap">
+        <svg id="circleSvg" width="280" height="280" viewBox="0 0 280 280">
+          <circle cx="140" cy="140" r="110" fill="none" stroke="#1e3245" stroke-width="1"/>
+          <line x1="30" y1="140" x2="250" y2="140" stroke="#1e3245" stroke-width="1"/>
+          <line x1="140" y1="30" x2="140" y2="250" stroke="#1e3245" stroke-width="1"/>
+          <line id="radiusLine" x1="140" y1="140" x2="250" y2="140" stroke="#5ecbdb" stroke-width="1.6"/>
+          <circle id="pointDot" cx="250" cy="140" r="6" fill="#5ecbdb"/>
+          <text x="256" y="132" font-size="11" fill="#86a0b8">1</text>
+          <text x="24" y="132" font-size="11" fill="#86a0b8">-1</text>
+          <text x="150" y="34" font-size="11" fill="#86a0b8">i</text>
+          <text x="146" y="252" font-size="11" fill="#86a0b8">-i</text>
+        </svg>
+        <div class="thetaLabel" id="thetaLabel">θ = 0° (0 rad)</div>
+        <input type="range" id="thetaSlider" min="0" max="360" value="0" step="1">
+        <div class="celebrate" id="celebrate">★ θ = 180° = π rad → acabás de llegar a la identidad de Euler</div>
+      </div>
+
+      <div class="panel">
+        <div class="formulaBox" id="formulaBox">
+          e<span id="fexp">^(i·<span id="fval">0.00</span>)</span> = <span id="fcos" class="fcos">1.000</span> + <span id="fi" class="fi">i</span>·<span id="fsin" class="fsin">0.000</span>
+        </div>
+        <div class="pillars">
+          <div class="pillar" data-p="analisis"><b>análisis</b>el número e</div>
+          <div class="pillar" data-p="geometria"><b>geometría</b>círculo y radianes</div>
+          <div class="pillar" data-p="algebra"><b>álgebra</b>la unidad i</div>
+          <div class="pillar" data-p="neutros"><b>neutros</b>el 0 y el 1</div>
+        </div>
+        <p class="idNote" id="idNote">Tocá un pilar para ver qué parte de la fórmula aporta cada rama de la
+        matemática.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SECCIÓN 3 — POLIEDROS ================= -->
+  <section class="sheet" id="s3">
+    <div class="sheet-head">
+      <span class="sheet-num">LÁMINA 03</span>
+      <h2>Vértices, aristas y caras: una regla que nunca falla</h2>
+    </div>
+    <div class="accentbar"></div>
+    <p class="dek">Contá los vértices (V), las aristas (E, los bordes) y las caras (F) de cualquier poliedro convexo
+    —una figura de caras planas sin huecos ni hendiduras—. Euler descubrió en 1750 que, sin importar la forma,
+    siempre se cumple <span style="font-family:var(--mono);color:var(--c-poliedros)">V − E + F = 2</span>. Elegí un
+    sólido y comprobalo vos mismo.</p>
+
+    <div class="grid2">
+      <div class="panel">
+        <div id="solidSvgWrap" style="display:flex;justify-content:center;padding:10px 0;"></div>
+      </div>
+      <div>
+        <div class="solidRow" id="solidRow"></div>
+        <div class="countRow">
+          <div class="countCard"><div class="num" id="cV">0</div><div class="lab">VÉRTICES (V)</div></div>
+          <div class="countCard"><div class="num" id="cE">0</div><div class="lab">ARISTAS (E)</div></div>
+          <div class="countCard"><div class="num" id="cF">0</div><div class="lab">CARAS (F)</div></div>
+        </div>
+        <div class="eulerCheck" id="eulerCheck">V − E + F = 2</div>
+        <label class="genusToggle">
+          <input type="checkbox" id="genusToggleBox">
+          Probar con un poliedro <b>con un agujero</b> (un "toro poliédrico")
+        </label>
+        <p id="genusNote" style="font-size:13px;color:var(--ink-dim);margin-top:10px;display:none;">
+        Con un agujero la cuenta da 0, no 2. La fórmula V − E + F no es un truco de conteo: mide algo más profundo,
+        una propiedad de la <em>forma</em> del espacio que no depende de la geometría exacta sino de cuántos agujeros
+        tiene. Esa idea —que a Euler le importan las conexiones y no las distancias— es exactamente la puerta de
+        entrada a la lámina siguiente.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SECCIÓN 4 — GRAFOS Y TOPOLOGÍA ================= -->
+  <section class="sheet" id="s4">
+    <div class="sheet-head">
+      <span class="sheet-num">LÁMINA 04</span>
+      <h2>El padre de la teoría de grafos (y de la topología)</h2>
+    </div>
+    <div class="accentbar"></div>
+    <p class="dek">En 1736, los vecinos de Königsberg (hoy Kaliningrado) se preguntaban si era posible dar un paseo
+    que cruzara sus <b>siete puentes</b> exactamente una vez cada uno, sin repetir ninguno. Euler entendió que la
+    forma exacta de las islas y las distancias no importaban: lo único relevante era <em>qué está conectado con
+    qué</em>. Así redujo el mapa a cuatro puntos y siete líneas —el primer grafo de la historia— y fundó una
+    disciplina que él mismo bautizó <em>geometria situs</em> ("geometría de la posición"), semilla de la topología
+    moderna. Probá cruzar los puentes vos mismo.</p>
+
+    <div class="grid2">
+      <div class="panel" style="display:flex;justify-content:center;">
+        <svg id="konigsSvg" width="380" height="300" viewBox="0 0 380 300"></svg>
+      </div>
+      <div>
+        <p style="font-size:14px;color:var(--ink-dim);">Hacé clic sobre un puente (una línea) para cruzarlo. Un
+        puente cruzado se marca en gris y no se puede volver a usar. Intentá cruzar los 7 sin quedarte varado.</p>
+        <div class="bridgeStats" id="bridgeStats"></div>
+        <div class="kMsg" id="kMsg">Puentes cruzados: 0 / 7</div>
+        <button class="kResetBtn" id="kReset">↺ Reiniciar paseo</button>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Maximática · material de estudio — Leonhard Euler y las cuatro láminas de su plano.
+  </footer>
+</main>
+
+<script>
+/* ============ NAV: resaltar sección activa ============ */
+(function(){
+  const items = document.querySelectorAll('.navitem');
+  const sections = ['s1','s2','s3','s4'].map(id=>document.getElementById(id));
+  const obs = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        const idx = sections.indexOf(e.target)+1;
+        items.forEach(it=>it.classList.toggle('active', it.dataset.t==idx));
+      }
+    });
+  }, {threshold:0.4});
+  sections.forEach(s=>obs.observe(s));
+})();
+
+/* ============ SECCIÓN 1 — NOTACIÓN ============ */
+(function(){
+  const data = [
+    {sym:'e', name:'Número e (constante de Euler)',
+     desc:'Base de los logaritmos naturales y del crecimiento continuo. Euler lo definió como el límite de (1+1/n)ⁿ cuando n crece sin límite, usó la letra "e" desde una carta de 1731 y la publicó en su Introductio in analysin infinitorum (1748).',
+     before:'No existía un símbolo fijo. El número aparecía escondido dentro de tablas de logaritmos, sin nombre propio.',
+     after:'"e" es hoy el símbolo universal de esta constante, columna vertebral del cálculo y del análisis matemático.'},
+    {sym:'i', name:'Unidad imaginaria',
+     desc:'Se define como una solución de x² = −1. Euler introdujo el símbolo "i" en 1777 para representar √−1, dándole a los números imaginarios una notación formal y operable.',
+     before:'Se escribía √−1 y se los llamaba cantidades "imposibles" o "ficticias", con desconfianza.',
+     after:'"i" permitió operar los números complejos con las mismas reglas del álgebra común, sin ambigüedad.'},
+    {sym:'f(x)', name:'Notación de función',
+     desc:'Euler introdujo "f(x)" para indicar "una función de x" en un trabajo de 1734, unificando cómo se escribe la relación entre una variable y su resultado.',
+     before:'Cada autor describía las relaciones entre variables con palabras propias, sin una notación compartida.',
+     after:'f(x) es hoy la manera estándar, en cualquier idioma, de escribir que un valor depende de otro.'},
+    {sym:'Σ', name:'Notación de sumatoria',
+     desc:'La letra griega sigma mayúscula fue adoptada por Euler en 1755 para abreviar la suma de muchos términos, incluso infinitos.',
+     before:'Las sumas largas se escribían término a término, separadas por puntos suspensivos.',
+     after:'Σ permite escribir sumas —incluso infinitas— de forma compacta, clara y manipulable algebraicamente.'},
+    {sym:'π', name:'Número pi',
+     desc:'El símbolo π había sido propuesto por William Jones en 1706, pero fue Euler quien lo adoptó desde 1736 y lo usó de forma tan sistemática en sus obras que se volvió el estándar mundial.',
+     before:'La razón entre la circunferencia y el diámetro no tenía un símbolo fijo: se explicitaba con palabras o con letras variables según el autor.',
+     after:'π se convirtió en el símbolo reconocido en todo el mundo para esta constante geométrica.'}
+  ];
+  const chipRow = document.getElementById('chipRow');
+  const card = document.getElementById('symcard');
+  function render(i){
+    chipRow.querySelectorAll('.chip').forEach((c,idx)=>c.classList.toggle('active', idx===i));
+    const d = data[i];
+    card.innerHTML = `
+      <h3>${d.sym}</h3>
+      <span class="name">${d.name}</span>
+      <p style="font-size:14px;">${d.desc}</p>
+      <div class="beforeafter">
+        <div class="ba-box"><span class="ba-label">Antes de Euler</span>${d.before}</div>
+        <div class="ba-box after"><span class="ba-label">Después de Euler</span>${d.after}</div>
+      </div>`;
+  }
+  data.forEach((d,i)=>{
+    const chip = document.createElement('div');
+    chip.className='chip';
+    chip.textContent=d.sym;
+    chip.addEventListener('click',()=>render(i));
+    chipRow.appendChild(chip);
+  });
+  render(0);
+})();
+
+/* ============ SECCIÓN 2 — IDENTIDAD ============ */
+(function(){
+  const slider = document.getElementById('thetaSlider');
+  const thetaLabel = document.getElementById('thetaLabel');
+  const radiusLine = document.getElementById('radiusLine');
+  const pointDot = document.getElementById('pointDot');
+  const fval = document.getElementById('fval');
+  const fcos = document.getElementById('fcos');
+  const fsin = document.getElementById('fsin');
+  const celebrate = document.getElementById('celebrate');
+  const cx=140, cy=140, r=110;
+
+  function update(){
+    const deg = parseInt(slider.value,10);
+    const rad = deg*Math.PI/180;
+    const x = cx + r*Math.cos(rad);
+    const y = cy - r*Math.sin(rad);
+    radiusLine.setAttribute('x2', x);
+    radiusLine.setAttribute('y2', y);
+    pointDot.setAttribute('cx', x);
+    pointDot.setAttribute('cy', y);
+    const radDisp = (rad/Math.PI).toFixed(2);
+    thetaLabel.textContent = `θ = ${deg}° (${radDisp}·π rad)`;
+    fval.textContent = radDisp+'π';
+    fcos.textContent = Math.cos(rad).toFixed(3);
+    fsin.textContent = Math.sin(rad).toFixed(3);
+    celebrate.classList.toggle('show', deg===180);
+  }
+  slider.addEventListener('input', update);
+  update();
+
+  const notes = {
+    analisis:'El número e nace del análisis matemático: es el límite de (1+1/n)ⁿ, la base natural del crecimiento continuo y de las derivadas más simples de calcular.',
+    geometria:'El círculo unitario y los radianes vienen de la geometría: medir el ángulo como longitud de arco es lo que permite que "elevar e a una potencia" trace una vuelta completa.',
+    algebra:'La unidad imaginaria i, solución de x² = −1, viene del álgebra: sin ella, potencias como eⁱˣ no tendrían sentido como giro en el plano.',
+    neutros:'0 y 1 son los neutros de la suma y del producto: el 1 no cambia nada al multiplicar, el 0 no cambia nada al sumar. La identidad los reúne junto con e, i y π en una sola línea.'
+  };
+  const idNote = document.getElementById('idNote');
+  document.querySelectorAll('.pillar').forEach(p=>{
+    p.addEventListener('click',()=>{
+      document.querySelectorAll('.pillar').forEach(x=>x.classList.remove('active'));
+      p.classList.add('active');
+      idNote.textContent = notes[p.dataset.p];
+    });
+  });
+})();
+
+/* ============ SECCIÓN 3 — POLIEDROS ============ */
+(function(){
+  const solids = [
+    {id:'tetra', name:'Tetraedro', V:4,E:6,F:4,
+     svg:`<svg width="220" height="220" viewBox="0 0 220 220">
+       <polygon points="30,170 190,170 110,190" fill="none" stroke="#3c5a75"/>
+       <line x1="30" y1="170" x2="110" y2="30" stroke="#ef7860" stroke-width="1.6"/>
+       <line x1="190" y1="170" x2="110" y2="30" stroke="#ef7860" stroke-width="1.6"/>
+       <line x1="110" y1="190" x2="110" y2="30" stroke="#ef7860" stroke-width="1.6" stroke-dasharray="4 3"/>
+       <line x1="30" y1="170" x2="190" y2="170" stroke="#ef7860" stroke-width="1.6"/>
+       <line x1="190" y1="170" x2="110" y2="190" stroke="#ef7860" stroke-width="1.6" stroke-dasharray="4 3"/>
+       <line x1="30" y1="170" x2="110" y2="190" stroke="#ef7860" stroke-width="1.6" stroke-dasharray="4 3"/>
+       <circle cx="30" cy="170" r="4" fill="#f2b84b"/><circle cx="190" cy="170" r="4" fill="#f2b84b"/>
+       <circle cx="110" cy="190" r="4" fill="#f2b84b"/><circle cx="110" cy="30" r="4" fill="#f2b84b"/>
+     </svg>`},
+    {id:'cubo', name:'Cubo', V:8,E:12,F:6,
+     svg:`<svg width="220" height="220" viewBox="0 0 220 220">
+       <polygon points="50,60 170,60 170,180 50,180" fill="none" stroke="#ef7860" stroke-width="1.6"/>
+       <polygon points="80,30 200,30 200,150 80,150" fill="none" stroke="#ef7860" stroke-width="1.6" stroke-dasharray="4 3"/>
+       <line x1="50" y1="60" x2="80" y2="30" stroke="#ef7860" stroke-width="1.6"/>
+       <line x1="170" y1="60" x2="200" y2="30" stroke="#ef7860" stroke-width="1.6"/>
+       <line x1="170" y1="180" x2="200" y2="150" stroke="#ef7860" stroke-width="1.6"/>
+       <line x1="50" y1="180" x2="80" y2="150" stroke="#ef7860" stroke-width="1.6" stroke-dasharray="4 3"/>
+       <circle cx="50" cy="60" r="4" fill="#f2b84b"/><circle cx="170" cy="60" r="4" fill="#f2b84b"/>
+       <circle cx="170" cy="180" r="4" fill="#f2b84b"/><circle cx="50" cy="180" r="4" fill="#f2b84b"/>
+       <circle cx="80" cy="30" r="4" fill="#f2b84b"/><circle cx="200" cy="30" r="4" fill="#f2b84b"/>
+       <circle cx="200" cy="150" r="4" fill="#f2b84b"/><circle cx="80" cy="150" r="4" fill="#f2b84b"/>
+     </svg>`},
+    {id:'octa', name:'Octaedro', V:6,E:12,F:8,
+     svg:`<svg width="220" height="220" viewBox="0 0 220 220">
+       <polygon points="20,110 110,150 200,110 110,70" fill="none" stroke="#ef7860" stroke-width="1.6" stroke-dasharray="4 3"/>
+       <line x1="110" y1="20" x2="20" y2="110" stroke="#ef7860" stroke-width="1.6"/>
+       <line x1="110" y1="20" x2="200" y2="110" stroke="#ef7860" stroke-width="1.6"/>
+       <line x1="110" y1="20" x2="110" y2="70" stroke="#ef7860" stroke-width="1.6" stroke-dasharray="4 3"/>
+       <line x1="110" y1="200" x2="20" y2="110" stroke="#ef7860" stroke-width="1.6"/>
+       <line x1="110" y1="200" x2="200" y2="110" stroke="#ef7860" stroke-width="1.6"/>
+       <line x1="110" y1="200" x2="110" y2="150" stroke="#ef7860" stroke-width="1.6" stroke-dasharray="4 3"/>
+       <circle cx="110" cy="20" r="4" fill="#f2b84b"/><circle cx="110" cy="200" r="4" fill="#f2b84b"/>
+       <circle cx="20" cy="110" r="4" fill="#f2b84b"/><circle cx="200" cy="110" r="4" fill="#f2b84b"/>
+       <circle cx="110" cy="70" r="4" fill="#f2b84b"/><circle cx="110" cy="150" r="4" fill="#f2b84b"/>
+     </svg>`},
+    {id:'dodeca', name:'Dodecaedro', V:20,E:30,F:12,
+     svg:`<svg width="220" height="220" viewBox="0 0 220 220">
+       <polygon points="110,20 175,65 150,140 70,140 45,65" fill="none" stroke="#ef7860" stroke-width="1.6"/>
+       <polygon points="110,60 145,85 132,125 88,125 75,85" fill="none" stroke="#ef7860" stroke-width="1.6" stroke-dasharray="4 3"/>
+       <line x1="110" y1="20" x2="110" y2="60" stroke="#ef7860" stroke-width="1"/>
+       <line x1="175" y1="65" x2="145" y2="85" stroke="#ef7860" stroke-width="1"/>
+       <line x1="150" y1="140" x2="132" y2="125" stroke="#ef7860" stroke-width="1"/>
+       <line x1="70" y1="140" x2="88" y2="125" stroke="#ef7860" stroke-width="1"/>
+       <line x1="45" y1="65" x2="75" y2="85" stroke="#ef7860" stroke-width="1"/>
+       <circle cx="110" cy="20" r="3.5" fill="#f2b84b"/><circle cx="175" cy="65" r="3.5" fill="#f2b84b"/>
+       <circle cx="150" cy="140" r="3.5" fill="#f2b84b"/><circle cx="70" cy="140" r="3.5" fill="#f2b84b"/>
+       <circle cx="45" cy="65" r="3.5" fill="#f2b84b"/>
+       <text x="110" y="185" text-anchor="middle" font-size="11" fill="#86a0b8">(esquema, 12 caras pentagonales)</text>
+     </svg>`},
+    {id:'icosa', name:'Icosaedro', V:12,E:30,F:20,
+     svg:`<svg width="220" height="220" viewBox="0 0 220 220">
+       <polygon points="110,20 175,65 150,140 70,140 45,65" fill="none" stroke="#ef7860" stroke-width="1.6"/>
+       <polygon points="110,180 175,135 150,60 70,60 45,135" fill="none" stroke="#ef7860" stroke-width="1.6" stroke-dasharray="4 3"/>
+       <circle cx="110" cy="20" r="3.5" fill="#f2b84b"/><circle cx="175" cy="65" r="3.5" fill="#f2b84b"/>
+       <circle cx="150" cy="140" r="3.5" fill="#f2b84b"/><circle cx="70" cy="140" r="3.5" fill="#f2b84b"/>
+       <circle cx="45" cy="65" r="3.5" fill="#f2b84b"/>
+       <circle cx="110" cy="180" r="3.5" fill="#f2b84b"/><circle cx="175" cy="135" r="3.5" fill="#f2b84b"/>
+       <circle cx="150" cy="60" r="3.5" fill="#f2b84b"/><circle cx="70" cy="60" r="3.5" fill="#f2b84b"/>
+       <circle cx="45" cy="135" r="3.5" fill="#f2b84b"/>
+       <text x="110" y="205" text-anchor="middle" font-size="11" fill="#86a0b8">(esquema, 20 caras triangulares)</text>
+     </svg>`}
+  ];
+  const torus = {V:16,E:32,F:16, name:'"toro poliédrico" (con un agujero)'};
+
+  const row = document.getElementById('solidRow');
+  const svgWrap = document.getElementById('solidSvgWrap');
+  const cV=document.getElementById('cV'), cE=document.getElementById('cE'), cF=document.getElementById('cF');
+  const eulerCheck = document.getElementById('eulerCheck');
+  const genusBox = document.getElementById('genusToggleBox');
+  const genusNote = document.getElementById('genusNote');
+  let current = 0;
+
+  function animateCount(el, target){
+    let start=0;
+    const step = Math.max(1, Math.round(target/16));
+    const iv = setInterval(()=>{
+      start += step;
+      if(start>=target){ start=target; clearInterval(iv); }
+      el.textContent = start;
+    }, 22);
+  }
+
+  function renderSolid(i){
+    current=i;
+    row.querySelectorAll('.solidBtn').forEach((b,idx)=>b.classList.toggle('active', idx===i));
+    genusBox.checked=false;
+    genusNote.style.display='none';
+    const s = solids[i];
+    svgWrap.innerHTML = s.svg;
+    applyCounts(s.V, s.E, s.F);
+  }
+  function applyCounts(V,E,F){
+    animateCount(cV,V); animateCount(cE,E); animateCount(cF,F);
+    const result = V-E+F;
+    setTimeout(()=>{
+      eulerCheck.textContent = `${V} − ${E} + ${F} = ${result}`;
+      eulerCheck.classList.toggle('ok', result===2);
+    }, 380);
+  }
+
+  solids.forEach((s,i)=>{
+    const b = document.createElement('div');
+    b.className='solidBtn';
+    b.textContent=s.name;
+    b.addEventListener('click',()=>renderSolid(i));
+    row.appendChild(b);
+  });
+
+  genusBox.addEventListener('change',()=>{
+    genusNote.style.display = genusBox.checked ? 'block':'none';
+    if(genusBox.checked){ applyCounts(torus.V, torus.E, torus.F); }
+    else { const s=solids[current]; applyCounts(s.V,s.E,s.F); }
+  });
+
+  renderSolid(0);
+})();
+
+/* ============ SECCIÓN 4 — KÖNIGSBERG ============ */
+(function(){
+  const svg = document.getElementById('konigsSvg');
+  const NS = 'http://www.w3.org/2000/svg';
+
+  const nodes = {
+    A:{x:190, y:40,  label:'Orilla norte'},
+    B:{x:190, y:260, label:'Orilla sur'},
+    C:{x:150, y:150, label:'Isla Kneiphof'},
+    D:{x:300, y:150, label:'Islote este'}
+  };
+  // 7 puentes reales de Königsberg
+  let bridges = [
+    {id:0, a:'A', b:'C', off:-14},
+    {id:1, a:'A', b:'C', off:14},
+    {id:2, a:'B', b:'C', off:-14},
+    {id:3, a:'B', b:'C', off:14},
+    {id:4, a:'A', b:'D', off:0},
+    {id:5, a:'B', b:'D', off:0},
+    {id:6, a:'C', b:'D', off:0}
+  ];
+  let crossed = new Set();
+  let path = [];
+
+  function degree(nodeKey, onlyRemaining){
+    return bridges.filter(br=> (br.a===nodeKey||br.b===nodeKey) && (!onlyRemaining || !crossed.has(br.id)) ).length;
+  }
+
+  function midpoint(br){
+    const p1=nodes[br.a], p2=nodes[br.b];
+    const mx=(p1.x+p2.x)/2, my=(p1.y+p2.y)/2;
+    const dx=p2.x-p1.x, dy=p2.y-p1.y;
+    const len=Math.hypot(dx,dy)||1;
+    const nx=-dy/len, ny=dx/len;
+    return {x:mx+nx*br.off, y:my+ny*br.off};
+  }
+
+  function draw(){
+    svg.innerHTML='';
+    // bridges as quadratic curves through offset midpoint
+    bridges.forEach(br=>{
+      const p1=nodes[br.a], p2=nodes[br.b];
+      const m = midpoint(br);
+      const path = document.createElementNS(NS,'path');
+      const d = `M ${p1.x} ${p1.y} Q ${m.x} ${m.y} ${p2.x} ${p2.y}`;
+      path.setAttribute('d', d);
+      path.setAttribute('fill','none');
+      const isCrossed = crossed.has(br.id);
+      path.setAttribute('stroke', isCrossed ? '#324152' : '#8fd17a');
+      path.setAttribute('stroke-width', isCrossed ? '3' : '4');
+      path.setAttribute('stroke-linecap','round');
+      path.style.cursor = isCrossed ? 'default':'pointer';
+      path.addEventListener('click',()=>crossBridge(br.id));
+      svg.appendChild(path);
+    });
+    // nodes
+    Object.entries(nodes).forEach(([k,n])=>{
+      const c = document.createElementNS(NS,'circle');
+      c.setAttribute('cx',n.x); c.setAttribute('cy',n.y); c.setAttribute('r',16);
+      c.setAttribute('fill','#0e1d2c'); c.setAttribute('stroke','#5ecbdb'); c.setAttribute('stroke-width','1.6');
+      svg.appendChild(c);
+      const t = document.createElementNS(NS,'text');
+      t.setAttribute('x',n.x); t.setAttribute('y', n.y+4); t.setAttribute('text-anchor','middle');
+      t.setAttribute('font-size','12'); t.setAttribute('fill','#dfe9f3'); t.textContent=k;
+      svg.appendChild(t);
+      const lab = document.createElementNS(NS,'text');
+      lab.setAttribute('x',n.x); lab.setAttribute('y', n.y + (n.y<150? -24: 32));
+      lab.setAttribute('text-anchor','middle'); lab.setAttribute('font-size','10'); lab.setAttribute('fill','#86a0b8');
+      lab.textContent = n.label;
+      svg.appendChild(lab);
+    });
+  }
+
+  function renderStats(){
+    const wrap = document.getElementById('bridgeStats');
+    wrap.innerHTML='';
+    Object.keys(nodes).forEach(k=>{
+      const d = degree(k,false);
+      const chip = document.createElement('div');
+      chip.className = 'degChip' + (d%2!==0 ? ' odd':'');
+      chip.innerHTML = `${k}: <b>${d}</b> puente${d===1?'':'s'} en total`;
+      wrap.appendChild(chip);
+    });
+  }
+
+  const kMsg = document.getElementById('kMsg');
+
+  function crossBridge(id){
+    if(crossed.has(id)) return;
+    const br = bridges.find(b=>b.id===id);
+    crossed.add(id);
+    draw();
+    const total = bridges.length;
+    kMsg.classList.remove('stuck');
+    if(crossed.size === total){
+      kMsg.textContent = `¡Cruzaste los ${total} puentes! (revisá si repetiste alguno con "reiniciar" para confirmar la ruta)`;
+    } else {
+      // check if stuck: is there any node with a remaining bridge reachable? Simplify: check total remaining odd-degree logic
+      const remaining = bridges.filter(b=>!crossed.has(b.id));
+      kMsg.textContent = `Puentes cruzados: ${crossed.size} / ${total}. Quedan ${remaining.length}.`;
+      // Euler's proof: since Königsberg has 4 odd-degree nodes from the start, no route can ever succeed.
+    }
+    if(crossed.size === total){
+      setTimeout(()=>{
+        kMsg.innerHTML += `<br><br><b style="color:#ef7860">Spoiler del propio Euler:</b> aunque hayas logrado cruzarlos todos en algún orden, es imposible hacerlo <em>sin repetir ningún puente</em>. Los cuatro sectores (A, B, C, D) tienen un número <b>impar</b> de puentes cada uno, y Euler demostró que una ruta así solo existe si hay 0 ó 2 sectores con número impar de puentes. Por eso el paseo de Königsberg es, matemáticamente, imposible.`;
+        kMsg.classList.add('stuck');
+      }, 300);
+    }
+  }
+
+  document.getElementById('kReset').addEventListener('click',()=>{
+    crossed = new Set();
+    draw();
+    kMsg.classList.remove('stuck');
+    kMsg.textContent = 'Puentes cruzados: 0 / 7';
+  });
+
+  draw();
+  renderStats();
+})();
+</script>
+</body>
+</html>
